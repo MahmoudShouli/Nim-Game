@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Black+Ops+One" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/version2.css">
+
+    <title>Nim Game</title>
+    
+</head>
+
+<body>
+    <h1 class="custom-heading2">Remove Sticks <span class="w2">NIM</span> Game</h1>
+    <p>you can click on the sticks to remove 1 or 2 sticks in each turn. </p>
+    <p class="p2">The player who removes the last stick WINS !!</p>
+
+    <div id="game-container">
+        <label for="stickCount">Number of Sticks:</label>
+        <input type="number" id="stickCount" min="1" max= "12" value="6">
+
+        <div id="sticks-container"></div>
+        <div id="message"></div>
+    </div>
+
+    <div id="turn"></div>
+    <div id="result"></div>
+    <button class="btn" onclick="initGame()">Start</button>
+    <a class="btn" href="main.html">Back</a>
+
+
+    <script>
+        let sticks;  //Holds the current number of sticks in the game.
+        let currentPlayer; //Represents the current player (human or computer).
+        const startFirst = sessionStorage.getItem('startFirst');
+        const userName = sessionStorage.getItem('name');
+        const difficulty = sessionStorage.getItem('difficulty');
+
+        function initGame() {
+            sticks = document.getElementById("stickCount").value; //Retrieves the initial number of sticks
+            currentPlayer = startFirst; //Sets the current player based on the starting player.
+            updateUI();//refresh
+
+            const message = document.getElementById("message");
+            message.innerText = ""; //Clear
+        
+            const result = document.getElementById("result");
+            result.innerText = "";  //Clear
+        }
+
+        //Dynamically updates the game interface:
+        function updateUI() {
+            const gameArea = document.getElementById("sticks-container");
+            gameArea.innerHTML = ''; //Clears the existing stick elements in the game area.
+
+            //Creates new stick elements based on the current number of sticks.
+            for (let i = 0; i < sticks; i++) {
+                const stick = document.createElement("div");
+                stick.className = "stick";
+                stick.setAttribute("onclick", "removeStick(" + i + ")");
+                gameArea.appendChild(stick);
+            }
+
+
+            //If it's the computer's turn, triggers a delay before calling computerMove().
+            if (currentPlayer === 'computer') {
+                setTimeout(computerMove, 1200);
+            }
+
+            const myDiv = document.getElementById('turn');
+
+            //Updates the turn information displayed to the user.
+            const turnText = document.createElement('p');
+            turnText.textContent = `${currentPlayer === 'human' ? userName : 'PC'}'s turn`;
+            myDiv.innerHTML = '';
+            myDiv.appendChild(turnText);
+        }
+
+        //Handles human player's stick removal:
+        function removeStick(index) {
+            if (currentPlayer === 'human') {
+                const sticksToRemove = index + 1;
+                //Checks if the move is valid (1 or 2 sticks can be removed).
+                if (sticksToRemove > 2) {
+                    showResult("Invalid move , u can only remove 1 or 2 sticks from the left");
+                    return;
+                }
+
+                //Updates the number of sticks, shows any relevant messages, switches turns, and updates the UI.
+                sticks -= sticksToRemove;
+                showResult("");
+                currentPlayer = currentPlayer === 'human' ? 'computer' : 'human';
+                updateUI();
+            }
+        }
+
+        function computerMove() {
+            const aiChoice = getBestMove(); //determine the best move for the computer.
+
+            //Updates the number of sticks, shows any relevant messages, switches turns, and updates the UI.
+            sticks -= aiChoice;
+            showResult("");
+            currentPlayer = currentPlayer === 'human' ? 'computer' : 'human';
+            updateUI();
+        }
+
+        //Calls the alphaBeta() function to get the best move for the computer based on the minimax algorithm with alpha-beta pruning.
+        function getBestMove() {
+            const depth = difficulty;
+            const result = alphaBeta(sticks, depth, -Infinity, Infinity, true);
+            return result.move;
+        }
+
+        function alphaBeta(stick, depth, alpha, beta, maximizingPlayer) {
+
+            
+            if (depth === 0 || stick === 0) {
+                
+                if (stick === 0) { 
+                    return { score: maximizingPlayer ? -1 : 1, move: 1 };
+                }
+                
+                return { score: stick, move: 1 };
+            }
+
+            let bestMove = 1;
+            if (maximizingPlayer) {  //max is playing, max player logic
+                let maxEval = -Infinity;
+                //Iterate through possible moves (removing 1 or 2 sticks):
+                for (let i = 1; i <= 2; i++) {
+                    const eval = alphaBeta(stick - i, depth - 1, alpha, beta, false).score; //Recursively call alphaBeta with the updated game state.
+                    
+                    if (eval > maxEval) {
+                        maxEval = eval;
+                        bestMove = i;
+                    }
+                    
+                    alpha = Math.max(alpha, eval);
+                    if (beta <= alpha) {
+                        break; 
+                    }
+                }
+                return { score: maxEval, move: bestMove }; //Return an object containing the evaluated score (minEval or maxEval) and the corresponding best move (bestMove).
+            }
+            else { //If it's the minimizing player's turn (human's turn):
+                let minEval = Infinity;
+                //Iterate through possible moves (removing 1 or 2 sticks):
+                for (let i = 1; i <= 2; i++) {
+                    const eval = alphaBeta(stick - i, depth - 1, alpha, beta, true).score;
+                    if (eval < minEval) {
+                        minEval = eval;
+                        bestMove = i;
+                    }
+                    beta = Math.min(beta, eval);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+                return { score: minEval, move: bestMove }; //Return an object containing the evaluated score (minEval or maxEval) and the corresponding best move (bestMove).
+            }
+        }
+
+
+        //Displays the game result based on the number of sticks remaining:
+        function showResult(message) {
+            const messageElement = document.getElementById("message");
+            messageElement.innerText = message;
+            const result = document.getElementById("result");
+
+            if (sticks === 0) { //game end
+                if (currentPlayer === 'human') {
+                    result.style.color = 'green'
+                    result.innerText = userName + "'s win!";
+                    setTimeout(initGame, 3000);
+                } else {
+                    result.style.color = 'red'
+                    result.innerText = "PC wins!";
+                    setTimeout(initGame, 3000);
+                }
+            }  
+        }
+    </script>
+</body>
+</html>

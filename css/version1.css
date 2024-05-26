@@ -1,0 +1,127 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+h1.custom-heading2 {
+  font-size: 2em; 
+  color: #ece2e2; 
+  text-align: center; 
+}
+
+
+h1.custom-heading2 span {
+  font-size: 50px; 
+  color: rgb(184, 81, 81);
+  font-weight: bold; 
+}
+
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-image: url('../image/b5.jpg'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+}
+
+
+body {
+  color: #ece2e2; 
+  font-family: 'Orbitron', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  overflow: hidden;
+}
+
+.groups-container {
+  display: flex;
+  flex-direction: row-reverse;
+  margin-bottom: 20px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column-reverse;
+  margin-right: 20px;
+}
+
+.group-button {
+  border: none;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 10px;
+  margin: 5px;
+  width: 80px;
+  border-radius: 5px;
+}
+
+.group-1 .group-button { background-color: red; }
+.group-2 .group-button { background-color: blue; }
+.group-3 .group-button { background-color: green; }
+.group-4 .group-button { background-color: rgb(199, 216, 10); }
+
+#turn{
+  margin-left: 70%;
+  font-weight: bolder;
+  font-size: 30px; 
+  color: rgb(184, 81, 81);
+}
+
+#result {
+  font-size: 50px;
+  margin-top: 20px;
+}
+.p2{
+  margin-bottom: 80px;
+}
+
+/* for the button */
+
+.btn {
+    margin-top: 50px;
+    margin-right: 80%;
+    padding: 0.9rem 1.8rem;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    border: 3px solid rgb(184, 81, 81);
+    cursor: pointer;
+    position: relative;
+    background-color: transparent;
+    text-decoration: none;
+    overflow: hidden;
+    z-index: 1;
+    font-family: inherit;
+  }
+
+.btn::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(184, 81, 81);
+    transform: translateX(-100%);
+    transition: all .3s;
+    z-index: -1;
+  }
+
+.btn:hover::before {
+    transform: translateX(0);
+  }
+

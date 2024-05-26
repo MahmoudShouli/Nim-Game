@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Black+Ops+One" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <title>Grouped Nim Game</title>
+    <link rel="stylesheet" href="../css/version1.css">
+</head>
+
+<body>
+    <h1 class="custom-heading2">Grouped <span class="w2">Nim</span> Game</h1>
+    <p>Click the sticks to take sticks from a group. You can remove any number of sticks, but only from one row.</p>
+    <p class="p2">The player who removes the last stick loses!</p>
+
+    <div class="groups-container" id="groups-container">
+        
+    </div>
+
+    <div id="turn"></div>
+    <div id="result"></div>
+
+    <a class="btn" href="main.html">Back</a>
+
+    
+    <script>
+
+        let groups = [1, 3, 5, 7]; // the number of sticks in each group 
+        let currentPlayer;  //indicating whose turn it is.
+
+
+
+        
+        function initGame() { 
+            const startFirst = sessionStorage.getItem('startFirst');   
+            currentPlayer = startFirst;  
+
+            groups = [1, 3, 5, 7];  
+            document.getElementById('result').innerHTML = '';   
+            updateUI(); 
+            
+
+            //If the current player is the computer, it sets a timeout to call computerMove() after a delay.
+            if (currentPlayer === 'computer') {
+                setTimeout(computerMove, 1200); 
+            }
+        }
+
+        //Dynamically updates the game interface:
+        function updateUI() {
+            const userName = sessionStorage.getItem('name');
+
+            document.getElementById('groups-container').innerHTML = '';   //Clears the groups container.
+
+
+            
+
+            //Loop Through Each Group:
+            for (let i = 0; i < groups.length; i++) {
+                const groupContainer = document.createElement('div'); 
+                groupContainer.className = `group group-${i + 1}`;
+
+                //Loop Through Each Stick in the Group:
+                for (let j = groups[i]; j > 0; j--) {
+                    const spaces = j - 1; // Calculates the number of spaces before the sticks for visual alignment.
+                    const stick = document.createElement('button');
+                    stick.className = `group-button group-${i + 1}`;
+                    stick.textContent = ' '.repeat(spaces) + '|';
+                    stick.addEventListener('click', () => chooseGroupStick(i, j));  
+                }
+
+                document.getElementById('groups-container').appendChild(groupContainer); 
+            }
+
+            
+            const myDiv = document.getElementById('turn');  
+            
+            const turnText = document.createElement('p');
+            turnText.textContent = `${currentPlayer === 'human' ? userName : 'PC'}'s turn`;  
+            myDiv.innerHTML = '';
+            myDiv.appendChild(turnText);
+        }
+
+        function chooseGroupStick(groupIndex, sticksToTake) {
+            if (currentPlayer === 'human') {
+                const sticksInGroup = groups[groupIndex];
+                
+                if (sticksInGroup >= sticksToTake) {
+                    groups[groupIndex] -= sticksToTake;  
+
+                    
+                    if (groups.every(count => count === 0)) {
+                        showResult('You lose!');
+                        return;
+                    }
+
+                    
+                    currentPlayer = 'computer';
+                    setTimeout(computerMove, 1200);
+                } else {
+                    
+                    alert('Please choose a valid number of sticks to take.');
+                }
+            }
+            updateUI(); //refresh
+
+        }
+
+        function computerMove() {
+            const { groupIndex, sticksToTake } = getBestMove(); //determines the computer best move
+            groups[groupIndex] -= sticksToTake; 
+
+            //Checks if all groups have no sticks left , indicating that the human player has won. 
+            if (groups.every(count => count === 0)) { 
+                showResult('You win!'); 
+            } else {
+                //If the game is not over, it switches the current player back to the human.
+                currentPlayer = 'human';
+            }
+            updateUI(); //refresh
+        }
+
+        function getBestMove() {
+            //keep track of the best move found so far.
+            let bestMove = { groupIndex: -1, sticksToTake: -1 };
+            let bestScore = -Infinity;
+            
+            //Retrieves the difficulty level (depth)
+            var difficulty = sessionStorage.getItem('difficulty');
+
+            
+            for (let i = 0; i < groups.length; i++) {
+                for (let j = 1; j <= groups[i]; j++) {
+                    const tempGroups = [...groups];
+                    tempGroups[i] -= j; 
+
+                    
+                    const score = alphaBeta(tempGroups, difficulty, -Infinity, Infinity, false);
+
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = { groupIndex: i, sticksToTake: j };
+                    }
+                }
+            }
+            
+            return bestMove;
+        }
+
+        function alphaBeta(groups, depth, alpha, beta, maximizingPlayer) {
+            
+            if (depth === 0 || groups.every(count => count === 0)) {
+                return maximizingPlayer ? 1 : -1;
+            }
+
+            if (maximizingPlayer) { // max is playing , maximizing player Logic:
+                let maxEval = -Infinity;
+
+                
+                for (let i = 0; i < groups.length; i++) {
+                    //Simulates the move by creating a copy of the current groups array (tempGroups) and subtracting the selected number of sticks.
+                    for (let j = 1; j <= groups[i]; j++) {
+                        const tempGroups = [...groups];
+                        tempGroups[i] -= j;
+
+
+                        //Calls alphaBeta() recursively with the updated state and switches to minimizing player's turn (false).
+                        const eval = alphaBeta(tempGroups, depth - 1, alpha, beta, false);  //eval = evaluation of the simulated move.
+                        maxEval = Math.max(maxEval, eval);
+                        alpha = Math.max(alpha, eval);
+
+                        if (beta <= alpha) {
+                            break; //breaks out of the loop since further exploration is unnecessary.
+                        }
+                    }
+                }
+                //If maximizingPlayer is true, returns maxEval (the best score for the maximizing player).
+                return maxEval;
+            } 
+            else {  
+                
+                let minEval = Infinity;
+                for (let i = 0; i < groups.length; i++) {
+                    for (let j = 1; j <= groups[i]; j++) {
+                        const tempGroups = [...groups];
+                        tempGroups[i] -= j;
+
+                        const eval = alphaBeta(tempGroups, depth - 1, alpha, beta, true);
+                        minEval = Math.min(minEval, eval);
+                        beta = Math.min(beta, eval);
+
+                        if (beta <= alpha) {
+                            break; 
+                        }
+                    }
+                }
+                //If maximizingPlayer is false, returns minEval (the best score for the minimizing player).
+                return minEval; 
+            }
+        }
+
+        //Displays the game result message and updates the result element's color.
+        function showResult(message) {
+            var resultElement = document.getElementById('result');
+            resultElement.textContent = message;
+            var myDiv = document.getElementById('turn');
+
+            if (message === 'You win!') {
+                myDiv.textContent = '';
+                resultElement.style.color = 'green';
+            } else {
+                myDiv.textContent = '';
+                resultElement.style.color = 'red';
+            }
+            setTimeout(initGame, 3000); // Reset 
+        }
+
+        //Initiates the game when the script is executed.
+        initGame();
+    </script>
+
+</body>
+
+</html>
